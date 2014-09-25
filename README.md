@@ -50,7 +50,7 @@ main = do (_, app, _) <- runSnaplet Nothing initApp
 ```shell
 public = "public"
 secret = "secret"
-sender = "email@verifiedaddress.com"
+sender = "support@solidtranslate.com"
 region = "us-east-1"
 ```
 
