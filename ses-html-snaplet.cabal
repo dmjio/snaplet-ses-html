@@ -7,7 +7,7 @@ license-file:        LICENSE
 author:              David Johnson
 maintainer:          djohnson.m@gmail.com
 copyright:           David Johnson
-category:            Web, AWS, Email, Snap
+category:            Web, AWS, Email, Snap, Network
 build-type:          Simple
 cabal-version:       >=1.10
 
@@ -22,3 +22,7 @@ library
                      , snap
                      , text
   default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/dmjio/ses-html-snaplet
