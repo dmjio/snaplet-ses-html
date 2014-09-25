@@ -5,7 +5,7 @@ A snaplet for the ses-html package
 
 example
 ================
-``haskell
+```haskell
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
