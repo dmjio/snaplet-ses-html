@@ -1,15 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Snap.Snaplet.SES
-    ( -- * Types
-      AWSKeys    (..)
-    , HasAWSKeys (..)
-      -- * Initialization
-    , initAWSKeys
+    ( -- * Initialization
+      initAWSKeys
     , sendEmail
     , sendEmailBlaze
     , withKeys
+      -- * Types
+    , AWSKeys    (..)
+    , HasAWSKeys (..)
+      -- * Module Re-export
     , module Network.SES
     ) where
 
@@ -27,52 +27,6 @@ import qualified Text.Blaze.Html5           as H
 
 ------------------------------------------------------------------------------
 -- | Type to hold AWS Config Information
---
--- > {-# LANGUAGE OverloadedStrings #-}
--- > {-# LANGUAGE RecordWildCards   #-}
--- > {-# LANGUAGE TemplateHaskell   #-}
--- > module Main ( main ) where
--- >  
--- > import           Control.Lens
--- > import qualified Data.ByteString.Char8 as B8
--- > import qualified Data.ByteString.Lazy.Char8 as BL8
--- > import           Snap
--- > import           Snap.Snaplet.SES
--- >  
--- > data App = App {
--- >    _awsKeys :: Snaplet AWSKeys
--- > }
--- >  
--- > makeLenses ''App
--- >  
--- > initApp :: SnapletInit App App
--- > initApp = makeSnaplet "name" "description" Nothing $ do
--- >             _awsKeys <- nestSnaplet "ses-html" awsKeys initAWSKeys
--- >             addRoutes [("/", handleKeys)]
--- >             return App {..}
--- >   where
--- >     handleKeys = method GET $ do
--- >       with awsKeys $ withKeys $ liftIO . print
--- >       result <- with awsKeys $ sendEmail ["david@solidtranslate.com"] "cookie-crisp" "<h1>TEST</h1>"
--- >       liftIO $ print result
--- >       writeBS "done"
--- >  
--- > main :: IO ()
--- > main = do (_, app, _) <- runSnaplet Nothing initApp
--- >           httpServe config app
--- >   where
--- >     config = setAccessLog ConfigNoLog $
--- >              setErrorLog ConfigNoLog $
--- >              defaultConfig
---
--- .\/snaplets\/ses-html\/devel.cfg
---
--- > public = "publickey"
--- > secret = "secretkey"
--- > region = "us-east-1"
--- > sender = "sender@verifiedaddress.com"
---
-
 data AWSKeys = AWSKeys
     { publicKey :: PublicKey -- ^ AWS Public Key
     , secretKey :: SecretKey -- ^ AWS Secret Key
@@ -146,6 +100,51 @@ sendEmail
 
 ------------------------------------------------------------------------------
 -- | Initialize snaplet
+--
+-- > {-# LANGUAGE OverloadedStrings #-}
+-- > {-# LANGUAGE RecordWildCards   #-}
+-- > {-# LANGUAGE TemplateHaskell   #-}
+-- > module Main ( main ) where
+-- >  
+-- > import           Control.Lens
+-- > import qualified Data.ByteString.Char8 as B8
+-- > import qualified Data.ByteString.Lazy.Char8 as BL8
+-- > import           Snap
+-- > import           Snap.Snaplet.SES
+-- >  
+-- > data App = App {
+-- >    _awsKeys :: Snaplet AWSKeys
+-- > }
+-- >  
+-- > makeLenses ''App
+-- >  
+-- > initApp :: SnapletInit App App
+-- > initApp = makeSnaplet "name" "description" Nothing $ do
+-- >             _awsKeys <- nestSnaplet "ses-html" awsKeys initAWSKeys
+-- >             addRoutes [("/", handleKeys)]
+-- >             return App {..}
+-- >   where
+-- >     handleKeys = method GET $ do
+-- >       with awsKeys $ withKeys $ liftIO . print
+-- >       result <- with awsKeys $ sendEmail ["david@solidtranslate.com"] "cookie-crisp" "<h1>TEST</h1>"
+-- >       liftIO $ print result
+-- >       writeBS "done"
+-- >  
+-- > main :: IO ()
+-- > main = do (_, app, _) <- runSnaplet Nothing initApp
+-- >           httpServe config app
+-- >   where
+-- >     config = setAccessLog ConfigNoLog $
+-- >              setErrorLog ConfigNoLog $
+-- >              defaultConfig
+--
+-- .\/snaplets\/ses-html\/devel.cfg
+--
+-- > public = "publickey"
+-- > secret = "secretkey"
+-- > region = "us-east-1"
+-- > sender = "sender@verifiedaddress.com"
+--
 initAWSKeys :: SnapletInit a AWSKeys
 initAWSKeys = makeSnaplet "ses-html" "Get your aws keys" Nothing $ do
         config <- getSnapletUserConfig
@@ -156,10 +155,10 @@ initAWSKeys = makeSnaplet "ses-html" "Get your aws keys" Nothing $ do
   where
     getRegion config = do
         let f :: Text -> Region
-            f x | x == "us-east-1" = USEast1
-                | x == "us-west-2" = USWest2
-                | x == "eu-west-1" = EUWest1
-                | otherwise        = USEast1
+            f "us-east-1" = USEast1
+            f "us-west-2" = USWest2
+            f "eu-west-1" = EUWest1
+            f _           = USEast1
         fromMaybe USEast1 <$> fmap f <$> C.lookup config "region"
 
     getPublic : getSecret : getSender : _
