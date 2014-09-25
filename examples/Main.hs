@@ -1,11 +1,3 @@
-ses-html-snaplet
-================
-
-A snaplet for the ses-html package
-
-example
-================
-``haskell
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -26,11 +18,11 @@ makeLenses ''App
 initApp :: SnapletInit App App
 initApp = makeSnaplet "name" "description" Nothing $ do
             _awsKeys <- nestSnaplet "ses-html" awsKeys initAWSKeys
-            addRoutes [("/", handleKeys)]
-            return App {..}
+	    addRoutes [("/", handleKeys)]
+	    return App {..}
   where
     handleKeys = method GET $ do
-      with awsKeys $ withKeys $ liftIO . print
+      with awsKeys $ withKeys $ liftIO . print             
       result <- with awsKeys $ sendEmail ["david@solidtranslate.com"] "cookie-crisp" "<h1>TEST</h1>"
       liftIO $ print result
       writeBS "done"
@@ -42,18 +34,8 @@ main = do (_, app, _) <- runSnaplet Nothing initApp
     config = setAccessLog ConfigNoLog $
              setErrorLog ConfigNoLog $
              defaultConfig
-```
 
-./snaplets/ses-html/devel.cfg
-================
 
-```shell
-public = "public"
-secret = "secret"
-sender = "email@verifiedaddress.com"
-region = "us-east-1"
-```
 
-result
-================
-<img src="http://i.imgur.com/NDWPxt9.png"></img>
+
+
