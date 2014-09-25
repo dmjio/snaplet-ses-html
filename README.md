@@ -1,4 +1,4 @@
-ses-html-snaplet
+snaplet-ses-html
 ================
 
 A snaplet for the ses-html package

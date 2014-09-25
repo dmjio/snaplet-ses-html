@@ -1,4 +1,4 @@
-name:                ses-html-snaplet
+name:                snaplet-ses-html
 version:             0.1.0.0
 synopsis:            Snaplet for the ses-html package
 description:         Send HTML formatted emails using Amazon's SES REST API with blaze
@@ -26,4 +26,4 @@ library
 
 source-repository head
   type:     git
-  location: https://github.com/dmjio/ses-html-snaplet
+  location: https://github.com/dmjio/snaplet-ses-html
