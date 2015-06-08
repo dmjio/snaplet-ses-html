@@ -13,17 +13,22 @@ module Snap.Snaplet.SES
     , module Network.SES
     ) where
 
-import           Control.Monad.Trans.Reader (ReaderT, asks, ask)
-import qualified Data.ByteString.Lazy.Char8 as BL8
-import qualified Data.Configurator          as C
-import           Data.Maybe                 (fromMaybe)
-import           Data.Monoid                (mempty)
-import           Data.Text                  (Text)
-import           Data.Text.Encoding         (encodeUtf8)
-import           Network.SES                hiding (sendEmail, sendEmailBlaze)
-import qualified Network.SES                as SES
+import           Control.Applicative               ((<$>), (<*>))
+import           Control.Lens                      ((^#))
+import           Control.Monad.IO.Class
+import           Control.Monad.Representable.State (get)
+import           Control.Monad.Trans.Reader        (ReaderT, ask, asks)
+import qualified Data.ByteString.Lazy.Char8        as BL8
+import qualified Data.Configurator                 as C
+import           Data.Maybe                        (fromMaybe)
+import           Data.Monoid                       (mempty)
+import           Data.Text                         (Text)
+import           Data.Text.Encoding                (encodeUtf8)
+import           Network.SES                       hiding (sendEmail,
+                                                    sendEmailBlaze)
+import qualified Network.SES                       as SES
 import           Snap
-import qualified Text.Blaze.Html5           as H
+import qualified Text.Blaze.Html5                  as H
 
 ------------------------------------------------------------------------------
 -- | Type to hold AWS Config Information
@@ -51,10 +56,10 @@ instance MonadIO m => HasAWSKeys (ReaderT AWSKeys m) where
 ------------------------------------------------------------------------------
 -- | Helper function for operating on `AWSKeys` inside of `HasAWSKeys` constrained Monads
 withKeys
- :: HasAWSKeys m 
+ :: HasAWSKeys m
  => (AWSKeys -> IO a) -- ^ Function operating on Keys
- -> m a    
-withKeys f = getKeys >>= liftIO . f 
+ -> m a
+withKeys f = getKeys >>= liftIO . f
 
 ------------------------------------------------------------------------------
 -- | Send Blaze email from a snap handler
@@ -105,19 +110,19 @@ sendEmail
 -- > {-# LANGUAGE RecordWildCards   #-}
 -- > {-# LANGUAGE TemplateHaskell   #-}
 -- > module Main ( main ) where
--- >  
+-- >
 -- > import           Control.Lens
 -- > import qualified Data.ByteString.Char8 as B8
 -- > import qualified Data.ByteString.Lazy.Char8 as BL8
 -- > import           Snap
 -- > import           Snap.Snaplet.SES
--- >  
+-- >
 -- > data App = App {
 -- >    _awsKeys :: Snaplet AWSKeys
 -- > }
--- >  
+-- >
 -- > makeLenses ''App
--- >  
+-- >
 -- > initApp :: SnapletInit App App
 -- > initApp = makeSnaplet "name" "description" Nothing $ do
 -- >             _awsKeys <- nestSnaplet "ses-html" awsKeys initAWSKeys
@@ -129,7 +134,7 @@ sendEmail
 -- >       result <- with awsKeys $ sendEmail ["david@solidtranslate.com"] "cookie-crisp" "<h1>TEST</h1>"
 -- >       liftIO $ print result
 -- >       writeBS "done"
--- >  
+-- >
 -- > main :: IO ()
 -- > main = do (_, app, _) <- runSnaplet Nothing initApp
 -- >           httpServe config app
