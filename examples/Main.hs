@@ -4,7 +4,8 @@
 module Main ( main ) where
 
 import           Control.Lens
-import qualified Data.ByteString.Char8 as B8
+import           Control.Monad.IO.Class     (liftIO)
+import qualified Data.ByteString.Char8      as B8
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Snap
 import           Snap.Snaplet.SES
@@ -22,7 +23,7 @@ initApp = makeSnaplet "name" "description" Nothing $ do
 	    return App {..}
   where
     handleKeys = method GET $ do
-      with awsKeys $ withKeys $ liftIO . print             
+      with awsKeys $ withKeys $ liftIO . print
       result <- with awsKeys $ sendEmail ["david@solidtranslate.com"] "cookie-crisp" "<h1>TEST</h1>"
       liftIO $ print result
       writeBS "done"
