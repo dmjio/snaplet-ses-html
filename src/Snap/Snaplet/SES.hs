@@ -3,6 +3,7 @@
 module Snap.Snaplet.SES
     ( -- * Initialization
       initSES
+    , initSES'
     , sendEmail
     , sendEmailBlaze
     , withKeys
