@@ -164,13 +164,15 @@ initSES = makeSnaplet "ses-mailer" "Send emails using AWS SES" Nothing $ do
     where
         getConfig name config = fromMaybe mempty <$> C.lookup config name
 
-        getRegion config = fromMaybe "us-east-1" <$> C.lookup config "region"
+        getRegion config = fromMaybe defaultRegion <$> C.lookup config "region"
 
         getPublic : getSecret : getSender : _
             = map getConfig [ "public"
                             , "secret"
                             , "sender"
                             ]
+
+        defaultRegion = "us-east-1"
 
 ------------------------------------------------------------------------------
 -- | Initialize snaplet
