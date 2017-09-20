@@ -1,5 +1,5 @@
 name:                snaplet-ses-html
-version:             0.1.1.0
+version:             0.2.0.0
 synopsis:            Snaplet for the ses-html package
 description:         Send HTML formatted emails using Amazon's SES REST API with blaze
 license:             BSD3
@@ -9,12 +9,12 @@ maintainer:          djohnson.m@gmail.com
 copyright:           David Johnson
 category:            Web, AWS, Email, Snap, Network
 build-type:          Simple
-cabal-version:       >=1.10
+cabal-version:       >= 1.10
 
 library
   exposed-modules:     Snap.Snaplet.SES
   hs-source-dirs:      src
-  build-depends:       base >=4.7 && <4.9
+  build-depends:       base >= 4.7 && < 4.9
                      , blaze-html
                      , bytestring 
                      , configurator
