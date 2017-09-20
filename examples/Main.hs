@@ -18,7 +18,7 @@ makeLenses ''App
 
 initApp :: SnapletInit App App
 initApp = makeSnaplet "name" "description" Nothing $ do
-            _awsKeys <- nestSnaplet "ses-html" awsKeys initAWSKeys
+            _awsKeys <- nestSnaplet "ses-html" awsKeys initSES
 	    addRoutes [("/", handleKeys)]
 	    return App {..}
   where
