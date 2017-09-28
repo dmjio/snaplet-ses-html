@@ -9,9 +9,10 @@ cabal-version:       >=1.10
 
 executable exampleApp
   main-is:             Main.hs
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >=4.7 && < 5
                      , snap
                      , snaplet-ses-html
                      , lens
+                     , transformers
                      , bytestring
   default-language:    Haskell2010

@@ -2,10 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Snap.Snaplet.SES
     ( -- * Initialization
-      initAWSKeys
+      initSES
+    , initSES'
     , sendEmail
     , sendEmailBlaze
     , withKeys
+      -- * Helpers
+    , mkAWSKeys
       -- * Types
     , AWSKeys    (..)
     , HasAWSKeys (..)
@@ -20,6 +23,7 @@ import           Control.Monad.Representable.State (get)
 import           Control.Monad.Trans.Reader        (ReaderT, ask, asks)
 import qualified Data.ByteString.Lazy.Char8        as BL8
 import qualified Data.Configurator                 as C
+import qualified Data.Configurator.Types           as CT
 import           Data.Maybe                        (fromMaybe)
 import           Data.Monoid                       (mempty)
 import           Data.Text                         (Text)
@@ -125,7 +129,7 @@ sendEmail
 -- >
 -- > initApp :: SnapletInit App App
 -- > initApp = makeSnaplet "name" "description" Nothing $ do
--- >             _awsKeys <- nestSnaplet "ses-html" awsKeys initAWSKeys
+-- >             _awsKeys <- nestSnaplet "ses-html" awsKeys initSES
 -- >             addRoutes [("/", handleKeys)]
 -- >             return App {..}
 -- >   where
@@ -150,26 +154,95 @@ sendEmail
 -- > region = "us-east-1"
 -- > sender = "sender@verifiedaddress.com"
 --
-initAWSKeys :: SnapletInit a AWSKeys
-initAWSKeys = makeSnaplet "ses-html" "Get your aws keys" Nothing $ do
-        config <- getSnapletUserConfig
-        liftIO $ AWSKeys <$> ((PublicKey . encodeUtf8) <$> getPublic config)
-                         <*> ((SecretKey . encodeUtf8) <$> getSecret config)
-                         <*> getRegion config
-                         <*> getSender config
-  where
-    getRegion config = do
-        let f :: Text -> Region
-            f "us-east-1" = USEast1
-            f "us-west-2" = USWest2
-            f "eu-west-1" = EUWest1
-            f _           = USEast1
-        fromMaybe USEast1 <$> fmap f <$> C.lookup config "region"
+initSES :: SnapletInit a AWSKeys
+initSES = makeSnaplet "ses-mailer" "Send emails using AWS SES" Nothing $ do
+    config <- getSnapletUserConfig
+    (public, secret, region, sender) <- liftIO $ (, , , ) <$> getPublic config
+                                                          <*> getSecret config
+                                                          <*> getRegion config
+                                                          <*> getSender config
+    return $ mkAWSKeys public secret region sender
+    where
+        getConfig name config = fromMaybe mempty <$> C.lookup config name
 
-    getPublic : getSecret : getSender : _
-         = map getConfig [ "public"
-                         , "secret"
-                         , "sender"
-                         ]
-    getConfig name config = fromMaybe mempty <$> C.lookup config name
+        getRegion config = fromMaybe defaultRegion <$> C.lookup config "region"
 
+        getPublic : getSecret : getSender : _
+            = map getConfig [ "public"
+                            , "secret"
+                            , "sender"
+                            ]
+
+        defaultRegion = "us-east-1"
+
+------------------------------------------------------------------------------
+-- | Initialize snaplet
+--
+-- > {-# LANGUAGE OverloadedStrings #-}
+-- > {-# LANGUAGE RecordWildCards   #-}
+-- > {-# LANGUAGE TemplateHaskell   #-}
+-- > module Main ( main ) where
+-- >
+-- > import           Control.Lens
+-- > import qualified Data.ByteString.Char8 as B8
+-- > import qualified Data.ByteString.Lazy.Char8 as BL8
+-- > import           Snap
+-- > import           Snap.Snaplet.SES
+-- > import           System.Environment     (getEnv)
+-- > import           Data.Text
+-- >
+-- > data App = App {
+-- >    _awsKeys :: Snaplet AWSKeys
+-- > }
+-- >
+-- > makeLenses ''App
+-- >
+-- > initApp :: SnapletInit App App
+-- > initApp = makeSnaplet "name" "description" Nothing $ do
+-- >             sesConfig <- liftIO sesMailerConfig
+-- >             _awsKeys <- nestSnaplet "ses-mailer" awsKeys (initSES' sesConfig )
+-- >             addRoutes [("/", handleKeys)]
+-- >             return App {..}
+-- >   where
+-- >     handleKeys = method GET $ do
+-- >       with awsKeys $ withKeys $ liftIO . print
+-- >       result <- with awsKeys $ sendEmail ["david@solidtranslate.com"] "cookie-crisp" "<h1>TEST</h1>"
+-- >       liftIO $ print result
+-- >       writeBS "done"
+-- >
+-- > main :: IO ()
+-- > main = do (_, app, _) <- runSnaplet Nothing initApp
+-- >           httpServe config app
+-- >   where
+-- >     config = setAccessLog ConfigNoLog $
+-- >              setErrorLog ConfigNoLog $
+-- >              defaultConfig
+-- >
+-- > ------------------------------------------------------------------------------
+-- > sesMailerConfig :: IO AWSKeys
+-- > sesMailerConfig = do
+-- >     public   <- getEnvAsText "AWS_PUBLIC_KEY"
+-- >     secret   <- getEnvAsText "AWS_SECRET_KEY"
+-- >     region   <- getEnvAsText "AWS_REGION"
+-- >     sender   <- getEnvAsText "AWS_SENDER"
+-- >     return $ mkAWSKeys public secret region sender
+-- >
+-- >     where
+-- >        getEnvAsText :: String -> IO Text
+-- >        getEnvAsText var = pack <$> getEnv var
+--
+initSES' :: AWSKeys ->  SnapletInit a AWSKeys
+initSES'= makeSnaplet "ses-html" "Get your AWS keys" Nothing . liftIO . return
+
+------------------------------------------------------------------------------
+-- | Helpers
+--
+parseRegion :: Text -> Region
+parseRegion "us-west-2" = USWest2
+parseRegion "eu-west-1" = EUWest1
+parseRegion _           = USEast1
+
+mkAWSKeys :: Text -> Text -> Text -> Text -> AWSKeys
+mkAWSKeys public secret region = AWSKeys (PublicKey . encodeUtf8 $ public)
+                                         (SecretKey . encodeUtf8 $ secret)
+                                         (parseRegion region)
